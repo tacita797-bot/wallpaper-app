@@ -1457,6 +1457,7 @@ function FilmsScreen({ setScreen, userId, isPremium, filmsCache, filmsLoaded }) 
   const [cat, setCat] = useState("전체");
   const [subCat, setSubCat] = useState("전체");
   const [showCatPopup, setShowCatPopup] = useState(false);
+  const [showBrandPopup, setShowBrandPopup] = useState(false);
   const [zoomFilm, setZoomFilm] = useState(null);
   const [search, setSearch] = useState("");
   const [sel, setSel] = useState(null);
@@ -1563,11 +1564,20 @@ function FilmsScreen({ setScreen, userId, isPremium, filmsCache, filmsLoaded }) 
   return (
     <div style={{ background: BG, minHeight: "100%" }}>
       <Header title="벽지 DB" back onBack={() => setScreen("home")} />
-      <div style={{ background: "#fff", borderBottom: `1px solid ${BORDER}`, display: "flex", overflowX: "auto" }}>
-        {BRANDS.map(b => (
-          <button key={b} onClick={() => { setBrand(b); setCat("전체"); setSubCat("전체"); setSel(null); setShowCatPopup(false); }} style={{ flexShrink: 0, padding: "12px 14px", border: "none", background: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, color: brand === b ? BRAND_COLORS[b] : SUB, borderBottom: brand === b ? `2.5px solid ${BRAND_COLORS[b]}` : "2.5px solid transparent", whiteSpace: "nowrap" }}>{b}</button>
-        ))}
+      <div style={{ background: "#fff", borderBottom: `1px solid ${BORDER}`, padding: "10px 14px", position: "relative" }}>
+        <button onClick={() => setShowBrandPopup(!showBrandPopup)} style={{ width: "100%", border: `1.5px solid ${BRAND_COLORS[brand] || BORDER}`, borderRadius: 10, padding: "10px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer", background: PL, color: BRAND_COLORS[brand] || TEXT, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span>{brand}</span>
+          <span style={{ fontSize: 11 }}>{showBrandPopup ? "▲" : "▼"}</span>
+        </button>
+        {showBrandPopup && (
+          <div style={{ position: "absolute", top: "calc(100% - 2px)", left: 14, right: 14, background: CARD, border: `1.5px solid ${PRIMARY}`, borderRadius: 12, boxShadow: "0 4px 16px rgba(0,0,0,0.12)", zIndex: 100, maxHeight: 320, overflowY: "auto" }}>
+            {BRANDS.map(b => (
+              <button key={b} onClick={() => { setBrand(b); setCat("전체"); setSubCat("전체"); setSel(null); setShowCatPopup(false); setShowBrandPopup(false); }} style={{ display: "block", width: "100%", textAlign: "left", padding: "12px 14px", fontSize: 13, fontWeight: brand === b ? 700 : 500, cursor: "pointer", background: brand === b ? PL : "transparent", color: brand === b ? BRAND_COLORS[b] : TEXT, border: "none", borderBottom: `1px solid ${BORDER}` }}>{b}</button>
+            ))}
+          </div>
+        )}
       </div>
+      {showBrandPopup && <div onClick={() => setShowBrandPopup(false)} style={{ position: "fixed", inset: 0, zIndex: 90 }} />}
       {brand !== "Custom" ? (
         <>
           {brand === "즐겨찾기" && favFilms.length === 0 ? (
