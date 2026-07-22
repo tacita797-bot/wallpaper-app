@@ -9,8 +9,8 @@
 import { useState, useRef, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 
-const SUPABASE_URL = "https://sgwhpgekjqntqkezxxed.supabase.co";
-const SUPABASE_KEY = "sb_publishable_0kzBl0iQH7_i64jPFHro_g_AMG6kqIt";
+const SUPABASE_URL = "여기에_새_프로젝트_URL_붙여넣기"; // 예: https://xxxxx.supabase.co
+const SUPABASE_KEY = "여기에_새_프로젝트_anon_key_붙여넣기"; // Settings → API → anon public
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── 무료/프리미엄 기능 제한 설정 (한 곳에서 관리) ──
@@ -2932,7 +2932,7 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
   // ── 벽지 종류 & 자재 단가 ──
   const WALLPAPER_TYPES = { "소폭합지": 2, "장폭": 5, "실크벽지": 5 }; // 시공평수 환산
   const [wallpaperType, setWallpaperType] = useState("실크벽지");
-  const [matUnitPrice, setMatUnitPrice] = useState(""); // 평당 자재단가
+  const [matUnitPrice, setMatUnitPrice] = useState(""); // 롤당 자재단가
 
   // ── 인건비 (기공/준기공/조공, 다중 선택 + 인원수) ──
   const [laborItems, setLaborItems] = useState([{ id: 0, type: "", count: "", days: "" }]);
@@ -3022,8 +3022,11 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
   // ── 도배지 필요량 (참고용: 실평수 × 3) ──
   const materialQty = supplyPyeong * 3;
 
-  // ── 자재비 계산: 주문수량(평) × 평당 단가 ──
-  const matTotal = orderQty * (parseFloat(matUnitPrice) || 0);
+  // ── 자재비 계산: 필요 롤 수 × 롤당 단가 ──
+  // 필요 롤 수 = 도배 주문수량(평) ÷ 벽지종류별 롤당 시공평수 (소수점 올림)
+  const rollCoverage = WALLPAPER_TYPES[wallpaperType] || 5;
+  const neededRolls = ceilUp(orderQty / rollCoverage);
+  const matTotal = neededRolls * (parseFloat(matUnitPrice) || 0);
 
   // ── 인건비 계산 ──
   const laborTotal = laborItems.reduce((s, l) => s + (parseInt(l.count) || 0) * (LABOR_TYPES[l.type] || 0) * (parseInt(l.days) || 1), 0);
@@ -3113,7 +3116,7 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
         isExpanded, builtinRate, ceilingIncluded, lossType,
         wallpaperType, matUnitPrice,
         useRemovalFee, useWasteFee, useGlueFee, useMealFee,
-        supplyPyeong, orderQty, materialQty
+        supplyPyeong, orderQty, materialQty, neededRolls
       },
       labor: laborItems,
       extra_items: extraItems,
@@ -3171,7 +3174,7 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
     const rows = [
       { label: "공급면적", value: `${supplyPyeong.toFixed(1)}평` },
       { label: "도배 주문수량", value: `${orderQty.toFixed(1)}평` },
-      { label: `자재비 (${wallpaperType}, 평당 ₩${Math.round(parseFloat(matUnitPrice) || 0).toLocaleString()})`, value: `₩${Math.round(matTotal).toLocaleString()}` },
+      { label: `자재비 (${wallpaperType} ${neededRolls}롤 × ₩${Math.round(parseFloat(matUnitPrice) || 0).toLocaleString()})`, value: `₩${Math.round(matTotal).toLocaleString()}` },
       { label: "인건비", value: `₩${Math.round(laborTotal).toLocaleString()}` },
       { label: "부대비용 (제거비/폐기물/풀기계/식대)", value: `₩${Math.round(extraTotal).toLocaleString()}` },
     ];
@@ -3213,7 +3216,7 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
             <div style={{ fontSize: 12, color: SUB, lineHeight: 1.9 }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}><span>공급면적</span><span>{supplyPyeong.toFixed(1)}평</span></div>
               <div style={{ display: "flex", justifyContent: "space-between" }}><span>도배 주문수량</span><span>{orderQty.toFixed(1)}평</span></div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}><span>자재비 ({wallpaperType})</span><span>₩{Math.round(matTotal).toLocaleString()}</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}><span>자재비 ({wallpaperType} {neededRolls}롤)</span><span>₩{Math.round(matTotal).toLocaleString()}</span></div>
               <div style={{ display: "flex", justifyContent: "space-between" }}><span>인건비</span><span>₩{Math.round(laborTotal).toLocaleString()}</span></div>
               <div style={{ display: "flex", justifyContent: "space-between" }}><span>부대비용</span><span>₩{Math.round(extraTotal).toLocaleString()}</span></div>
             </div>
@@ -3369,13 +3372,15 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
                 </div>
               </div>
               <div>
-                <label style={{ fontSize: 11, fontWeight: 600, color: SUB, display: "block", marginBottom: 4 }}>평당 자재단가</label>
+                <label style={{ fontSize: 11, fontWeight: 600, color: SUB, display: "block", marginBottom: 4 }}>롤당 자재단가</label>
                 <NumFmt value={matUnitPrice} onChange={e => setMatUnitPrice(e.target.value)} placeholder="30,000" style={{ width: "100%" }} />
               </div>
               {supplyPyeong > 0 && (
                 <div style={{ marginTop: 10, padding: 10, background: BG, borderRadius: 8, fontSize: 11, color: SUB, lineHeight: 1.8 }}>
                   <div style={{ display: "flex", justifyContent: "space-between" }}><span>공급면적</span><span style={{ fontWeight: 700, color: TEXT }}>{supplyPyeong.toFixed(1)}평</span></div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}><span>도배 주문수량 (손실률 포함)</span><span style={{ fontWeight: 700, color: PRIMARY }}>{orderQty.toFixed(1)}평</span></div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}><span>{wallpaperType} 1롤 시공평수</span><span>{rollCoverage}평/롤</span></div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}><span>필요 롤 수</span><span style={{ fontWeight: 700, color: PRIMARY }}>{neededRolls}롤</span></div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}><span>도배지 필요량 (참고)</span><span>{materialQty.toFixed(1)}평</span></div>
                 </div>
               )}
@@ -3498,7 +3503,7 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
               <div style={{ fontSize: 13, lineHeight: 2 }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: SUB }}>공급면적</span><span style={{ fontWeight: 600 }}>{supplyPyeong.toFixed(1)}평</span></div>
                 <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: SUB }}>도배 주문수량</span><span style={{ fontWeight: 600 }}>{orderQty.toFixed(1)}평</span></div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: SUB }}>자재비 ({wallpaperType})</span><span style={{ fontWeight: 700, color: PRIMARY }}>₩{Math.round(matTotal).toLocaleString()}</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: SUB }}>자재비 ({wallpaperType} {neededRolls}롤)</span><span style={{ fontWeight: 700, color: PRIMARY }}>₩{Math.round(matTotal).toLocaleString()}</span></div>
                 <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: SUB }}>인건비</span><span style={{ fontWeight: 700, color: PRIMARY }}>₩{Math.round(laborTotal).toLocaleString()}</span></div>
                 <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: SUB }}>부대비용</span><span style={{ fontWeight: 700, color: PRIMARY }}>₩{Math.round(extraTotal).toLocaleString()}</span></div>
               </div>
