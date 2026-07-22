@@ -9,8 +9,8 @@
 import { useState, useRef, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 
-const SUPABASE_URL = "여기에_새_프로젝트_URL_붙여넣기"; // 예: https://xxxxx.supabase.co
-const SUPABASE_KEY = "여기에_새_프로젝트_anon_key_붙여넣기"; // Settings → API → anon public
+const SUPABASE_URL = "https://sgwhpgekjqntqkezxxed.supabase.co"; // 예: https://xxxxx.supabase.co
+const SUPABASE_KEY = "sb_publishable_0kzBl0iQH7_i64jPFHro_g_AMG6kqIt"; // Settings → API → anon public
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── 무료/프리미엄 기능 제한 설정 (한 곳에서 관리) ──
