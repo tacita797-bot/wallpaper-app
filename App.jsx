@@ -9,8 +9,8 @@
 import { useState, useRef, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 
-const SUPABASE_URL = "https://sgwhpgekjqntqkezxxed.supabase.co"; // 예: https://xxxxx.supabase.co
-const SUPABASE_KEY = "sb_publishable_0kzBl0iQH7_i64jPFHro_g_AMG6kqIt"; // Settings → API → anon public
+const SUPABASE_URL = "https://sgwhpgekjqntqkezxxed.supabase.co";
+const SUPABASE_KEY = "sb_publishable_0kzBl0iQH7_i64jPFHro_g_AMG6kqIt";
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── 무료/프리미엄 기능 제한 설정 (한 곳에서 관리) ──
@@ -3389,24 +3389,33 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
 
             {/* 인건비 */}
             <Card style={{ marginTop: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                <label style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>👷 인건비</label>
-                <button onClick={() => setLaborItems(p => [...p, { id: Date.now(), type: "", count: "", days: "" }])} style={{ background: PRIMARY, color: "#fff", border: "none", borderRadius: 8, padding: "3px 10px", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>+ 추가</button>
-              </div>
-              {laborItems.map((l, i) => (
-                <div key={l.id} style={{ background: BG, borderRadius: 8, padding: 10, marginBottom: 6 }}>
-                  <div style={{ display: "flex", gap: 4 }}>
-                    <select value={l.type} onChange={e => { const v = e.target.value; setLaborItems(p => p.map(x => x.id === l.id ? { ...x, type: v } : x)); }} style={{ flex: 2, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "7px 4px", fontSize: 12, outline: "none", color: l.type ? TEXT : SUB }}>
-                      <option value="">시공자</option>
-                      {Object.keys(LABOR_TYPES).map(t => <option key={t} value={t}>{t} (₩{LABOR_TYPES[t].toLocaleString()}/일)</option>)}
-                    </select>
-                    <input value={l.count} onChange={e => setLaborItems(p => p.map(x => x.id === l.id ? { ...x, count: e.target.value } : x))} placeholder="명" type="number" style={{ width: 44, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "7px 2px", fontSize: 12, outline: "none", textAlign: "center", flexShrink: 0 }} />
-                    <input value={l.days} onChange={e => setLaborItems(p => p.map(x => x.id === l.id ? { ...x, days: e.target.value } : x))} placeholder="일수" type="number" style={{ width: 44, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "7px 2px", fontSize: 12, outline: "none", textAlign: "center", flexShrink: 0 }} />
-                    {laborItems.length > 1 && <button onClick={() => setLaborItems(p => p.filter(x => x.id !== l.id))} style={{ background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA", borderRadius: 6, padding: "2px 6px", fontSize: 11, cursor: "pointer", alignSelf: "center" }}>×</button>}
+              <label style={{ fontSize: 13, fontWeight: 700, color: TEXT, display: "block", marginBottom: 10 }}>👷 인건비</label>
+              {Object.keys(LABOR_TYPES).map(type => {
+                const item = laborItems.find(l => l.type === type) || { type, count: "", days: "" };
+                const updLabor = (field, val) => {
+                  setLaborItems(p => {
+                    const exists = p.find(l => l.type === type);
+                    if (exists) {
+                      return p.map(l => l.type === type ? { ...l, [field]: val } : l);
+                    } else {
+                      return [...p.filter(l => l.type), { id: Date.now(), type, count: "", days: "", [field]: val }];
+                    }
+                  });
+                };
+                const amount = (parseInt(item.count) || 0) * (LABOR_TYPES[type] || 0) * (parseInt(item.days) || 1);
+                return (
+                  <div key={type} style={{ background: BG, borderRadius: 8, padding: 10, marginBottom: 6 }}>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <span style={{ flex: 2, fontSize: 12, fontWeight: 700, color: TEXT }}>{type} <span style={{ fontWeight: 400, color: SUB, fontSize: 11 }}>(₩{LABOR_TYPES[type].toLocaleString()}/일)</span></span>
+                      <input value={item.count} onChange={e => updLabor("count", e.target.value)} placeholder="명" type="number" style={{ width: 50, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "7px 2px", fontSize: 12, outline: "none", textAlign: "center", flexShrink: 0 }} />
+                      <span style={{ fontSize: 11, color: SUB, flexShrink: 0 }}>명</span>
+                      <input value={item.days} onChange={e => updLabor("days", e.target.value)} placeholder="1" type="number" style={{ width: 50, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "7px 2px", fontSize: 12, outline: "none", textAlign: "center", flexShrink: 0 }} />
+                      <span style={{ fontSize: 11, color: SUB, flexShrink: 0 }}>일</span>
+                    </div>
+                    {parseInt(item.count) > 0 && <div style={{ textAlign: "right", fontSize: 11, fontWeight: 600, color: PRIMARY, marginTop: 4 }}>{item.count}명 × {item.days || 1}일 × ₩{LABOR_TYPES[type].toLocaleString()} = ₩{amount.toLocaleString()}</div>}
                   </div>
-                  {(parseInt(l.count) > 0 && l.type) && <div style={{ textAlign: "right", fontSize: 11, fontWeight: 600, color: PRIMARY, marginTop: 4 }}>₩{((parseInt(l.count)||0) * (LABOR_TYPES[l.type]||0) * (parseInt(l.days)||1)).toLocaleString()}</div>}
-                </div>
-              ))}
+                );
+              })}
               {laborTotal > 0 && <div style={{ textAlign: "right", fontSize: 12, fontWeight: 700, color: PRIMARY, marginTop: 4 }}>인건비 합계: ₩{laborTotal.toLocaleString()} ({totalWorkers}명)</div>}
             </Card>
 
