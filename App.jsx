@@ -2685,7 +2685,6 @@ function AllianceScreen({ userId, setScreen, isPremium }) {
 
 // ── AI 시뮬 ──
 function AIScreen({ userId, setScreen, filmsCache, filmsLoaded }) {
-  const [photo, setPhoto] = useState(null);
   const [selectedWallpapers, setSelectedWallpapers] = useState([]); // 선택된 벽지 목록 (최대 3개)
   const [extra, setExtra] = useState("");
   const [dbFilms, setDbFilms] = useState([]);
@@ -2694,7 +2693,6 @@ function AIScreen({ userId, setScreen, filmsCache, filmsLoaded }) {
   const [brand, setBrand] = useState("LX하우시스");
   const [cat, setCat] = useState("전체");
   const [copied, setCopied] = useState(false);
-  const fileRef = useRef();
   const BRANDS = ["LX하우시스", "개나리벽지", "신한벽지", "디아이디", "현대L&C", "Custom"];
   const allFilms = [...FILMS, ...dbFilms];
   const MAX_SELECT = 3;
@@ -2703,8 +2701,6 @@ function AIScreen({ userId, setScreen, filmsCache, filmsLoaded }) {
     if (!filmsLoaded || !filmsCache) return;
     setDbFilms(filmsCache.map(f => ({ id: f.id, code: f.code, name: f.name, color: f.color || "#D0CBC4", cat: f.category, brand: f.brand, isNew: f.is_new, img_url: f.img_url })));
   }, [filmsCache, filmsLoaded]);
-
-  function handlePhoto(e) { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => setPhoto(r.result); r.readAsDataURL(f); }
 
   function toggleWallpaper(f) {
     setSelectedWallpapers(p => {
@@ -2716,7 +2712,7 @@ function AIScreen({ userId, setScreen, filmsCache, filmsLoaded }) {
     });
   }
 
-  // 사진 다운로드 (현장 사진 또는 벽지 이미지)
+  // 벽지 이미지 다운로드
   function downloadImage(dataUrl, filename) {
     const a = document.createElement("a");
     a.href = dataUrl;
@@ -2762,7 +2758,6 @@ ${wallpaperDesc}
   }
 
   function openGemini() {
-    if (!photo) { alert("먼저 현장 사진을 업로드해주세요."); return; }
     if (selectedWallpapers.length === 0) { alert("먼저 벽지를 선택해주세요."); return; }
     window.open("https://gemini.google.com/", "_blank");
   }
@@ -2779,28 +2774,12 @@ ${wallpaperDesc}
         <Card style={{ background: "#EFF6FF", border: "1px solid #93C5FD" }}>
           <div style={{ fontSize: 12, color: "#1E40AF", fontWeight: 700, marginBottom: 4 }}>💡 사용 방법</div>
           <div style={{ fontSize: 11, color: "#1E40AF", lineHeight: 1.7 }}>
-            1. 현장 사진 업로드<br/>
-            2. 적용할 벽지 선택 (최대 {MAX_SELECT}개)<br/>
-            3. 사진들을 다운로드하고 Gemini 앱에서 직접 합성해보세요<br/>
-            4. 무료이고 한도 걱정 없이 사용할 수 있어요!
+            1. 적용할 벽지 선택 (최대 {MAX_SELECT}개)<br/>
+            2. 벽지 이미지 다운로드<br/>
+            3. 아래 버튼으로 Gemini 열기<br/>
+            4. Gemini에서 <b>갤러리의 시공 전 사진 + 방금 받은 벽지 사진</b>을 함께 업로드하고 프롬프트 붙여넣기<br/>
+            5. 무료이고 한도 걱정 없이 사용할 수 있어요!
           </div>
-        </Card>
-
-        {/* 현장 사진 */}
-        <Card>
-          <p style={{ fontSize: 13, fontWeight: 700, margin: "0 0 10px", color: SUB }}>📸 현장 사진</p>
-          {!photo ? (
-            <button onClick={() => fileRef.current.click()} style={{ width: "100%", border: `2px dashed ${BORDER}`, borderRadius: 12, padding: "28px 0", background: BG, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 28 }}>📷</span><span style={{ fontSize: 14, color: SUB }}>사진 업로드</span>
-            </button>
-          ) : (
-            <div style={{ position: "relative" }}>
-              <img src={photo} alt="" style={{ width: "100%", borderRadius: 10, display: "block", maxHeight: 200, objectFit: "cover" }} />
-              <button onClick={() => setPhoto(null)} style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.6)", border: "none", borderRadius: 16, padding: "4px 10px", color: "#fff", cursor: "pointer", fontSize: 12 }}>변경</button>
-              <button onClick={() => downloadImage(photo, `현장사진_${new Date().toISOString().split("T")[0]}.jpg`)} style={{ position: "absolute", bottom: 8, right: 8, background: "rgba(0,0,0,0.6)", border: "none", borderRadius: 16, padding: "4px 10px", color: "#fff", cursor: "pointer", fontSize: 12 }}>📥 저장</button>
-            </div>
-          )}
-          <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePhoto} />
         </Card>
 
         {/* 벽지 선택 */}
@@ -2901,7 +2880,8 @@ ${wallpaperDesc}
           ✨ Gemini 앱에서 시뮬레이션하기 →
         </button>
         <div style={{ fontSize: 11, color: SUB, textAlign: "center", lineHeight: 1.6, padding: "0 10px" }}>
-          Gemini가 열리면 현장 사진과 벽지 이미지를 함께 첨부하고<br/>
+          Gemini가 열리면 <b>갤러리에서 시공 전 사진</b>과<br/>
+          방금 받은 벽지 이미지를 함께 첨부하고<br/>
           복사한 프롬프트를 붙여넣어 주세요
         </div>
       </div>
