@@ -3166,11 +3166,17 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
     }
   }
   function printPDF(date) {
-    const validItems = items.filter(it => itemArea(it) > 0 || it.memo);
     const vatLine = vat === "include" ? `<div style="display:flex;justify-content:space-between;font-size:12px;color:#6B7280"><span>부가세(VAT 10% 포함)</span><span>포함</span></div>` : vat === "separate" ? `<div style="display:flex;justify-content:space-between;font-size:12px;color:#6B7280"><span>부가세 별도 (+10%)</span><span>₩${Math.round(vatAmount).toLocaleString()}</span></div>` : "";
     const vatNote = vat === "include" ? "· 본 견적 금액은 부가세(VAT 10%)가 포함된 금액입니다." : vat === "separate" ? "· 본 견적 금액에 부가세(VAT 10%)가 별도로 추가됩니다." : "";
-    const rows = validItems.map((it, i) => { const a = itemArea(it); const amt = Math.round(a * customerUnit); return `<tr style="background:${i % 2 === 0 ? "#fff" : "#F8F9FF"}"><td style="padding:8px 10px;font-size:12px;border-bottom:1px solid #E5E7EB">${it.memo || "항목" + (i + 1)}</td><td style="padding:8px 10px;font-size:12px;text-align:center;border-bottom:1px solid #E5E7EB">${a.toFixed(2)}㎡</td><td style="padding:8px 10px;font-size:12px;text-align:center;border-bottom:1px solid #E5E7EB">₩${Math.round(customerUnit).toLocaleString()}</td><td style="padding:8px 10px;font-size:12px;font-weight:700;color:#5561F5;text-align:right;border-bottom:1px solid #E5E7EB">₩${amt.toLocaleString()}</td></tr>`; }).join("");
-    const htmlContent = `<div style="font-family:sans-serif;padding:28px 24px;max-width:700px;margin:0 auto"><div style="display:flex;justify-content:space-between;margin-bottom:24px;padding-bottom:20px;border-bottom:2px solid #5561F5"><div><div style="font-size:22px;font-weight:800;color:#5561F5;margin-bottom:4px">도배 시공 견적서</div><div style="font-size:12px;color:#6B7280">발행일: ${date}</div></div><div style="text-align:right"><div style="font-size:14px;font-weight:700">인테리어 벽지 전문점</div></div></div><div style="background:#F8F9FF;border-radius:12px;padding:14px 16px;margin-bottom:20px"><div style="font-size:12px;font-weight:700;color:#5561F5;margin-bottom:10px">고객 정보</div><table style="width:100%;font-size:12px;border-collapse:collapse"><tr><td style="color:#6B7280;padding:2px 0;width:70px">고객명</td><td style="font-weight:700">${selC ? selC.name : ""}</td></tr><tr><td style="color:#6B7280;padding:2px 0">연락처</td><td>${selC ? selC.phone : ""}</td></tr><tr><td style="color:#6B7280;padding:2px 0">주소</td><td>${selC ? selC.address : ""}</td></tr><tr><td style="color:#6B7280;padding:2px 0">작업일</td><td>${selC ? (selC.work_date || "미정") : ""}</td></tr></table></div><table style="width:100%;border-collapse:collapse;margin-bottom:20px"><thead><tr style="background:#5561F5"><th style="padding:8px 10px;font-size:11px;color:#fff;text-align:left">부위</th><th style="padding:8px 10px;font-size:11px;color:#fff;text-align:center">면적(㎡)</th><th style="padding:8px 10px;font-size:11px;color:#fff;text-align:center">㎡당 단가</th><th style="padding:8px 10px;font-size:11px;color:#fff;text-align:right">금액</th></tr></thead><tbody>${rows}</tbody></table><div style="background:#F8F9FF;border-radius:8px;padding:14px 16px;margin-bottom:20px"><div style="display:flex;justify-content:space-between;font-size:12px;color:#6B7280;margin-bottom:4px"><span>총 면적</span><span>${totalArea.toFixed(2)}㎡</span></div><div style="display:flex;justify-content:space-between;font-size:12px;color:#6B7280;margin-bottom:4px"><span>㎡당 단가</span><span>₩${Math.round(customerUnit).toLocaleString()}</span></div>${vatLine}<div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800;color:#5561F5;border-top:1px solid #E5E7EB;margin-top:8px;padding-top:8px"><span>최종 견적 금액</span><span>₩${Math.round(finalTotal).toLocaleString()}</span></div></div><div style="border-top:1px solid #E5E7EB;padding-top:14px;font-size:11px;color:#6B7280;line-height:1.8">· 본 견적서의 유효기간은 발행일로부터 30일입니다.<br>· 자재비 및 시공 범위에 따라 최종 금액이 변경될 수 있습니다.</div><div style="color:transparent;font-size:1px;position:absolute;left:-9999px;user-select:none" aria-hidden="true">FP-2026-tacita797-ORIGINAL ${Date.now()}</div>${vatNote ? "<br>" + vatNote : ""}</div></div>`;
+    const rows = [
+      { label: "공급면적", value: `${supplyPyeong.toFixed(1)}평` },
+      { label: "도배 주문수량", value: `${orderQty.toFixed(1)}평` },
+      { label: `자재비 (${wallpaperType}, 평당 ₩${Math.round(parseFloat(matUnitPrice) || 0).toLocaleString()})`, value: `₩${Math.round(matTotal).toLocaleString()}` },
+      { label: "인건비", value: `₩${Math.round(laborTotal).toLocaleString()}` },
+      { label: "부대비용 (제거비/폐기물/풀기계/식대)", value: `₩${Math.round(extraTotal).toLocaleString()}` },
+    ];
+    const rowsHtml = rows.map((r, i) => `<tr style="background:${i % 2 === 0 ? "#fff" : "#F8F9FF"}"><td style="padding:8px 10px;font-size:12px;border-bottom:1px solid #E5E7EB">${r.label}</td><td style="padding:8px 10px;font-size:12px;font-weight:700;color:#5561F5;text-align:right;border-bottom:1px solid #E5E7EB">${r.value}</td></tr>`).join("");
+    const htmlContent = `<div style="font-family:sans-serif;padding:28px 24px;max-width:700px;margin:0 auto"><div style="display:flex;justify-content:space-between;margin-bottom:24px;padding-bottom:20px;border-bottom:2px solid #5561F5"><div><div style="font-size:22px;font-weight:800;color:#5561F5;margin-bottom:4px">도배 시공 견적서</div><div style="font-size:12px;color:#6B7280">발행일: ${date}</div></div><div style="text-align:right"><div style="font-size:14px;font-weight:700">인테리어 벽지 전문점</div></div></div><div style="background:#F8F9FF;border-radius:12px;padding:14px 16px;margin-bottom:20px"><div style="font-size:12px;font-weight:700;color:#5561F5;margin-bottom:10px">고객 정보</div><table style="width:100%;font-size:12px;border-collapse:collapse"><tr><td style="color:#6B7280;padding:2px 0;width:70px">고객명</td><td style="font-weight:700">${selC ? selC.name : ""}</td></tr><tr><td style="color:#6B7280;padding:2px 0">연락처</td><td>${selC ? selC.phone : ""}</td></tr><tr><td style="color:#6B7280;padding:2px 0">주소</td><td>${selC ? selC.address : ""}</td></tr><tr><td style="color:#6B7280;padding:2px 0">작업일</td><td>${selC ? (selC.work_date || "미정") : ""}</td></tr></table></div><table style="width:100%;border-collapse:collapse;margin-bottom:20px"><thead><tr style="background:#5561F5"><th style="padding:8px 10px;font-size:11px;color:#fff;text-align:left">항목</th><th style="padding:8px 10px;font-size:11px;color:#fff;text-align:right">금액</th></tr></thead><tbody>${rowsHtml}</tbody></table><div style="background:#F8F9FF;border-radius:8px;padding:14px 16px;margin-bottom:20px">${vatLine}<div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800;color:#5561F5;border-top:1px solid #E5E7EB;margin-top:8px;padding-top:8px"><span>최종 견적 금액</span><span>₩${Math.round(finalTotal).toLocaleString()}</span></div></div><div style="border-top:1px solid #E5E7EB;padding-top:14px;font-size:11px;color:#6B7280;line-height:1.8">· 본 견적서의 유효기간은 발행일로부터 30일입니다.<br>· 자재비 및 시공 범위에 따라 최종 금액이 변경될 수 있습니다.</div><div style="color:transparent;font-size:1px;position:absolute;left:-9999px;user-select:none" aria-hidden="true">WP-2026-tacita797-ORIGINAL ${Date.now()}</div>${vatNote ? "<br>" + vatNote : ""}</div></div>`;
     return htmlContent;
   }
   function downloadEstimatePDF(date) {
@@ -3192,7 +3198,6 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
   }
   if (done) {
     const date = new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
-    const validItems = items.filter(it => itemArea(it) > 0 || it.memo);
     return (
       <div style={{ background: BG, minHeight: "100%" }}>
         <Header title="견적서" back onBack={() => setScreen("home")} />
@@ -3205,13 +3210,17 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
           <Card>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, paddingBottom: 12, borderBottom: `1px solid ${BORDER}` }}><span style={{ fontSize: 13, color: SUB }}>발행일</span><span style={{ fontSize: 13, fontWeight: 600 }}>{date}</span></div>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, paddingBottom: 12, borderBottom: `1px solid ${BORDER}` }}><span style={{ fontSize: 13, color: SUB }}>고객명</span><span style={{ fontSize: 13, fontWeight: 700 }}>{selC ? selC.name : ""}</span></div>
-            <div style={{ display: "flex", fontSize: 11, color: SUB, paddingBottom: 6, borderBottom: `1px solid ${BORDER}`, marginBottom: 6 }}><span style={{ flex: 2 }}>부위</span><span style={{ flex: 1, textAlign: "center" }}>면적</span><span style={{ flex: 1, textAlign: "right" }}>금액</span></div>
-            {validItems.map((it, i) => { const a = itemArea(it); return (<div key={it.id} style={{ display: "flex", fontSize: 13, marginBottom: 8, alignItems: "center" }}><span style={{ flex: 2, fontWeight: 600 }}>{it.memo || "항목 " + (i + 1)}</span><span style={{ flex: 1, textAlign: "center", color: SUB }}>{a.toFixed(2)}㎡</span><span style={{ flex: 1, textAlign: "right", fontWeight: 700, color: PRIMARY }}>₩{Math.round(a * customerUnit).toLocaleString()}</span></div>); })}
+            <div style={{ fontSize: 12, color: SUB, lineHeight: 1.9 }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}><span>공급면적</span><span>{supplyPyeong.toFixed(1)}평</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}><span>도배 주문수량</span><span>{orderQty.toFixed(1)}평</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}><span>자재비 ({wallpaperType})</span><span>₩{Math.round(matTotal).toLocaleString()}</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}><span>인건비</span><span>₩{Math.round(laborTotal).toLocaleString()}</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}><span>부대비용</span><span>₩{Math.round(extraTotal).toLocaleString()}</span></div>
+            </div>
             <div style={{ borderTop: `1px solid ${BORDER}`, marginTop: 6, paddingTop: 10 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}><span style={{ fontSize: 12, color: SUB }}>㎡당 단가</span><span style={{ fontSize: 12, color: SUB }}>₩{Math.round(customerUnit).toLocaleString()}/㎡</span></div>
               {vat === "include" && <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}><span style={{ fontSize: 12, color: SUB }}>부가세 10% 포함</span><span style={{ fontSize: 12, color: SUB }}>포함</span></div>}
               {vat === "separate" && <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}><span style={{ fontSize: 12, color: SUB }}>부가세 별도 (+10%)</span><span style={{ fontSize: 12, color: SUB }}>₩{Math.round(vatAmount).toLocaleString()}</span></div>}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ fontSize: 14, fontWeight: 700 }}>총 {totalArea.toFixed(2)}㎡</span><span style={{ fontSize: 20, fontWeight: 800, color: PRIMARY }}>₩{Math.round(finalTotal).toLocaleString()}</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ fontSize: 14, fontWeight: 700 }}>최종 견적</span><span style={{ fontSize: 20, fontWeight: 800, color: PRIMARY }}>₩{Math.round(finalTotal).toLocaleString()}</span></div>
             </div>
           </Card>
           <div style={{ display: "flex", gap: 10 }}>
@@ -3245,19 +3254,16 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
           <div>
             <Card>
               <p style={{ fontSize: 13, fontWeight: 700, margin: "0 0 12px", color: TEXT }}>📋 견적서 작성</p>
-
-              {/* 검색창 */}
               <div style={{ position: "relative", marginBottom: 10 }}>
                 <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 14, color: SUB }}>🔍</span>
                 <input
                   value={searchClient}
                   onChange={e => setSearchClient(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") e.preventDefault(); }}
                   placeholder="고객명 · 전화번호 · 주소로 검색"
                   style={{ width: "100%", border: `1.5px solid ${BORDER}`, borderRadius: 10, padding: "10px 12px 10px 36px", fontSize: 13, outline: "none", boxSizing: "border-box", color: TEXT }}
                 />
               </div>
-
-              {/* 지역 필터 */}
               {regionList.length > 0 && (
                 <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4, marginBottom: 10 }}>
                   <button onClick={() => setFilterRegion("전체")} style={{ border: "none", borderRadius: 20, padding: "5px 13px", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", background: filterRegion === "전체" ? PRIMARY : BG, color: filterRegion === "전체" ? "#fff" : SUB }}>전체</button>
@@ -3266,13 +3272,9 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
                   ))}
                 </div>
               )}
-
-              {/* 새 견적 (고객 없이) 옵션 */}
               <button onClick={() => { setSelC({ id: "_new", name: "새 고객", phone: "", address: "" }); setStep(2); }} style={{ width: "100%", border: `2px dashed ${PRIMARY}`, borderRadius: 12, padding: "12px 14px", cursor: "pointer", textAlign: "center", background: "#fff", marginBottom: 10, color: PRIMARY, fontSize: 13, fontWeight: 700 }}>
                 + 새 견적 작성 (고객 미선택)
               </button>
-
-              {/* 고객 리스트 */}
               <p style={{ fontSize: 11, fontWeight: 600, color: SUB, marginBottom: 6 }}>👤 고객관리에서 선택 ({filteredClients.length}명)</p>
               {filteredClients.length === 0 && (
                 <div style={{ textAlign: "center", padding: 20, color: SUB, fontSize: 12 }}>
@@ -3293,51 +3295,139 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
                 <div style={{ fontSize: 11, color: "#991B1B", lineHeight: 1.5 }}>이미 시공이 완료된 견적은 수정할 수 없어요. 보기만 가능합니다.</div>
               </Card>
             )}
-            {items.map((it, i) => { const a = itemArea(it); const mc = itemMatCost(it); return (
-              <Card key={it.id} style={{ marginTop: 12 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700 }}>항목 {i + 1}</span>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 12, color: PRIMARY, fontWeight: 600 }}>{a > 0 ? a.toFixed(3) + "㎡" : ""}{mc > 0 ? " · " + Math.round(mc).toLocaleString() + "원" : ""}</span>
-                    {items.length > 1 && <button onClick={() => removeItem(it.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#EF4444", fontSize: 12 }}>삭제</button>}
-                  </div>
-                </div>
-                <div style={{ marginBottom: 10 }}><label style={{ fontSize: 11, fontWeight: 600, color: SUB, display: "block", marginBottom: 4 }}>부위</label><input value={it.memo} onChange={e => upd(it.id, "memo", e.target.value)} onFocus={handleFocus} placeholder="싱크대 상부장" style={{ width: "100%", border: `1.5px solid ${BORDER}`, borderRadius: 9, padding: "9px 12px", fontSize: 13, outline: "none", boxSizing: "border-box", color: TEXT }} /></div>
-                <div style={{ marginBottom: 10 }}>
-                  <label style={{ fontSize: 11, fontWeight: 600, color: SUB, display: "block", marginBottom: 4 }}>크기 (mm)</label>
+
+            {/* 면적 입력 방식 */}
+            <Card style={{ marginTop: 12 }}>
+              <label style={{ fontSize: 13, fontWeight: 700, color: TEXT, display: "block", marginBottom: 8 }}>📐 면적 입력</label>
+              <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+                <button onClick={() => setInputMode("pyeong")} style={{ flex: 1, border: `2px solid ${inputMode === "pyeong" ? PRIMARY : BORDER}`, borderRadius: 10, padding: "9px 0", fontSize: 12, fontWeight: 700, cursor: "pointer", background: inputMode === "pyeong" ? PL : "#fff", color: inputMode === "pyeong" ? PRIMARY : SUB }}>평형대 (대략)</button>
+                <button onClick={() => setInputMode("measure")} style={{ flex: 1, border: `2px solid ${inputMode === "measure" ? PRIMARY : BORDER}`, borderRadius: 10, padding: "9px 0", fontSize: 12, fontWeight: 700, cursor: "pointer", background: inputMode === "measure" ? PL : "#fff", color: inputMode === "measure" ? PRIMARY : SUB }}>실측 (정확)</button>
+              </div>
+              {inputMode === "pyeong" ? (
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: SUB, display: "block", marginBottom: 4 }}>분양평수</label>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <NumFmt value={it.w} onChange={e => { const v = Math.min(99999, parseInt(e.target.value) || 0); upd(it.id, "w", v || ""); }} placeholder="가로" style={{ width: "38%", textAlign: "center" }} />
+                    <NumFmt value={pyeongInput} onChange={e => setPyeongInput(e.target.value)} placeholder="32" style={{ flex: 1 }} />
+                    <span style={{ fontSize: 13, color: SUB, flexShrink: 0 }}>평</span>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: SUB, display: "block", marginBottom: 4 }}>가로 × 세로 (m)</label>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <NumFmt value={measureW} onChange={e => setMeasureW(e.target.value)} placeholder="가로" style={{ flex: 1, textAlign: "center" }} />
                     <span style={{ color: SUB, fontSize: 13, flexShrink: 0 }}>×</span>
-                    <NumFmt value={it.h} onChange={e => { const v = Math.min(99999, parseInt(e.target.value) || 0); upd(it.id, "h", v || ""); }} placeholder="세로" style={{ width: "38%", textAlign: "center" }} />
-                    <span style={{ fontSize: 12, color: PRIMARY, fontWeight: 700, flexShrink: 0, minWidth: 48, textAlign: "right" }}>{a > 0 ? a.toFixed(3) + "㎡" : ""}</span>
+                    <NumFmt value={measureH} onChange={e => setMeasureH(e.target.value)} placeholder="세로" style={{ flex: 1, textAlign: "center" }} />
+                    <span style={{ fontSize: 12, color: PRIMARY, fontWeight: 700, flexShrink: 0 }}>{supplyPyeong > 0 ? supplyPyeong.toFixed(1) + "평" : ""}</span>
                   </div>
                 </div>
-                <div style={{ marginBottom: 10 }}><label style={{ fontSize: 11, fontWeight: 600, color: SUB, display: "block", marginBottom: 6 }}>벽지 (선택)</label>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    <select value={it.film ? it.film.brand : ""} onChange={e => { const b = e.target.value; upd(it.id, "film", b ? { brand: b, code: "", name: "" } : null); }} style={{ flex: 1, border: `1.5px solid ${BORDER}`, borderRadius: 9, padding: "9px 8px", fontSize: 13, outline: "none", boxSizing: "border-box", color: TEXT, background: "#fff" }}>
-                      <option value="">브랜드 선택</option>
-                      <option value="직접입력">✏️ 직접 입력</option>
-                      {BRANDS_LIST.map(b => <option key={b} value={b}>{b}</option>)}
+              )}
+            </Card>
+
+            {/* 옵션 */}
+            <Card style={{ marginTop: 12 }}>
+              <label style={{ fontSize: 13, fontWeight: 700, color: TEXT, display: "block", marginBottom: 8 }}>⚙️ 옵션</label>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, padding: "8px 10px", background: BG, borderRadius: 8 }}>
+                <span style={{ fontSize: 12, color: TEXT }}>베란다 확장형 (+15%)</span>
+                <button onClick={() => setIsExpanded(p => !p)} style={{ width: 40, height: 22, borderRadius: 11, border: "none", cursor: "pointer", background: isExpanded ? PRIMARY : BORDER, position: "relative" }}>
+                  <div style={{ width: 18, height: 18, borderRadius: "50%", background: "#fff", position: "absolute", top: 2, left: isExpanded ? 20 : 2, transition: "left 0.15s" }} />
+                </button>
+              </div>
+              <div style={{ marginBottom: 8 }}>
+                <label style={{ fontSize: 12, color: TEXT, display: "block", marginBottom: 6 }}>붙박이장 감산</label>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {[0, 5, 8].map(v => (
+                    <button key={v} onClick={() => setBuiltinRate(v)} style={{ flex: 1, border: `2px solid ${builtinRate === v ? PRIMARY : BORDER}`, borderRadius: 8, padding: "6px 0", fontSize: 11, fontWeight: 700, cursor: "pointer", background: builtinRate === v ? PL : "#fff", color: builtinRate === v ? PRIMARY : SUB }}>{v === 0 ? "없음" : `-${v}%`}</button>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 10px", background: BG, borderRadius: 8 }}>
+                <span style={{ fontSize: 12, color: TEXT }}>천장 포함 시공</span>
+                <button onClick={() => setCeilingIncluded(p => !p)} style={{ width: 40, height: 22, borderRadius: 11, border: "none", cursor: "pointer", background: ceilingIncluded ? PRIMARY : BORDER, position: "relative" }}>
+                  <div style={{ width: 18, height: 18, borderRadius: "50%", background: "#fff", position: "absolute", top: 2, left: ceilingIncluded ? 20 : 2, transition: "left 0.15s" }} />
+                </button>
+              </div>
+            </Card>
+
+            {/* 벽지 종류 & 손실률 & 단가 */}
+            <Card style={{ marginTop: 12 }}>
+              <label style={{ fontSize: 13, fontWeight: 700, color: TEXT, display: "block", marginBottom: 8 }}>🧻 벽지 자재</label>
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ fontSize: 11, fontWeight: 600, color: SUB, display: "block", marginBottom: 6 }}>벽지 종류</label>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {Object.keys(WALLPAPER_TYPES).map(t => (
+                    <button key={t} onClick={() => setWallpaperType(t)} style={{ flex: 1, border: `2px solid ${wallpaperType === t ? PRIMARY : BORDER}`, borderRadius: 8, padding: "7px 0", fontSize: 11, fontWeight: 700, cursor: "pointer", background: wallpaperType === t ? PL : "#fff", color: wallpaperType === t ? PRIMARY : SUB }}>{t}</button>
+                  ))}
+                </div>
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ fontSize: 11, fontWeight: 600, color: SUB, display: "block", marginBottom: 6 }}>손실률 (벽지 무늬)</label>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {Object.keys(LOSS_RATES).map(t => (
+                    <button key={t} onClick={() => setLossType(t)} style={{ flex: 1, border: `2px solid ${lossType === t ? PRIMARY : BORDER}`, borderRadius: 8, padding: "7px 0", fontSize: 11, fontWeight: 700, cursor: "pointer", background: lossType === t ? PL : "#fff", color: lossType === t ? PRIMARY : SUB }}>{t} (+{LOSS_RATES[t]}%)</button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: SUB, display: "block", marginBottom: 4 }}>평당 자재단가</label>
+                <NumFmt value={matUnitPrice} onChange={e => setMatUnitPrice(e.target.value)} placeholder="30,000" style={{ width: "100%" }} />
+              </div>
+              {supplyPyeong > 0 && (
+                <div style={{ marginTop: 10, padding: 10, background: BG, borderRadius: 8, fontSize: 11, color: SUB, lineHeight: 1.8 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}><span>공급면적</span><span style={{ fontWeight: 700, color: TEXT }}>{supplyPyeong.toFixed(1)}평</span></div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}><span>도배 주문수량 (손실률 포함)</span><span style={{ fontWeight: 700, color: PRIMARY }}>{orderQty.toFixed(1)}평</span></div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}><span>도배지 필요량 (참고)</span><span>{materialQty.toFixed(1)}평</span></div>
+                </div>
+              )}
+              {matTotal > 0 && <div style={{ fontSize: 11, color: PRIMARY, marginTop: 6, textAlign: "right", fontWeight: 700 }}>자재비: ₩{Math.round(matTotal).toLocaleString()}</div>}
+            </Card>
+
+            {/* 인건비 */}
+            <Card style={{ marginTop: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                <label style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>👷 인건비</label>
+                <button onClick={() => setLaborItems(p => [...p, { id: Date.now(), type: "", count: "", days: "" }])} style={{ background: PRIMARY, color: "#fff", border: "none", borderRadius: 8, padding: "3px 10px", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>+ 추가</button>
+              </div>
+              {laborItems.map((l, i) => (
+                <div key={l.id} style={{ background: BG, borderRadius: 8, padding: 10, marginBottom: 6 }}>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    <select value={l.type} onChange={e => { const v = e.target.value; setLaborItems(p => p.map(x => x.id === l.id ? { ...x, type: v } : x)); }} style={{ flex: 2, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "7px 4px", fontSize: 12, outline: "none", color: l.type ? TEXT : SUB }}>
+                      <option value="">시공자</option>
+                      {Object.keys(LABOR_TYPES).map(t => <option key={t} value={t}>{t} (₩{LABOR_TYPES[t].toLocaleString()}/일)</option>)}
                     </select>
-                    {it.film && it.film.brand === "직접입력" ? (
-                      <input value={it.film.code || ""} onChange={e => upd(it.id, "film", { ...it.film, code: e.target.value, name: e.target.value })} placeholder="코드/이름 직접 입력" style={{ flex: 2, border: `1.5px solid ${BORDER}`, borderRadius: 9, padding: "9px 12px", fontSize: 13, outline: "none", boxSizing: "border-box", color: TEXT }} />
-                    ) : (
-                      <select value={it.film && it.film.code ? it.film.code : ""} onChange={e => { const code = e.target.value; if (!code) return; const f = allFilms.find(x => x.code === code); if (f) { upd(it.id, "film", f); trackFilmUse(f); } }} disabled={!it.film || !it.film.brand} style={{ flex: 2, border: `1.5px solid ${BORDER}`, borderRadius: 9, padding: "9px 8px", fontSize: 13, outline: "none", boxSizing: "border-box", color: TEXT, background: (!it.film || !it.film.brand) ? "#F3F4F6" : "#fff" }}>
-                        <option value="">{it.film && it.film.brand ? "코드 선택" : "브랜드 먼저 선택"}</option>
-                        {it.film && it.film.brand && allFilms.filter(f => f.brand === it.film.brand).map(f => (
-                          <option key={f.id} value={f.code}>{f.code} {f.name ? "— " + f.name : ""}</option>
-                        ))}
-                      </select>
-                    )}
+                    <input value={l.count} onChange={e => setLaborItems(p => p.map(x => x.id === l.id ? { ...x, count: e.target.value } : x))} placeholder="명" type="number" style={{ width: 44, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "7px 2px", fontSize: 12, outline: "none", textAlign: "center", flexShrink: 0 }} />
+                    <input value={l.days} onChange={e => setLaborItems(p => p.map(x => x.id === l.id ? { ...x, days: e.target.value } : x))} placeholder="일수" type="number" style={{ width: 44, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "7px 2px", fontSize: 12, outline: "none", textAlign: "center", flexShrink: 0 }} />
+                    {laborItems.length > 1 && <button onClick={() => setLaborItems(p => p.filter(x => x.id !== l.id))} style={{ background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA", borderRadius: 6, padding: "2px 6px", fontSize: 11, cursor: "pointer", alignSelf: "center" }}>×</button>}
                   </div>
-                  {it.film && it.film.code && <div style={{ fontSize: 11, color: PRIMARY, fontWeight: 600, marginTop: 6 }}>✓ {it.film.brand} {it.film.code} {it.film.name && it.film.name !== it.film.code ? it.film.name : ""}</div>}
+                  {(parseInt(l.count) > 0 && l.type) && <div style={{ textAlign: "right", fontSize: 11, fontWeight: 600, color: PRIMARY, marginTop: 4 }}>₩{((parseInt(l.count)||0) * (LABOR_TYPES[l.type]||0) * (parseInt(l.days)||1)).toLocaleString()}</div>}
                 </div>
-                <div><label style={{ fontSize: 11, fontWeight: 600, color: SUB, display: "block", marginBottom: 4 }}>자재비 (㎡당)</label><NumFmt value={it.mat} onChange={e => upd(it.id, "mat", e.target.value)} placeholder="15,000" style={{ width: "100%" }} />
-                {it.mat && parseFloat(it.mat) > 0 && itemArea(it) > 0 && <div style={{ fontSize: 11, color: PRIMARY, marginTop: 4 }}>자재비: ₩{Math.round(itemMatCost(it)).toLocaleString()}</div>}
+              ))}
+              {laborTotal > 0 && <div style={{ textAlign: "right", fontSize: 12, fontWeight: 700, color: PRIMARY, marginTop: 4 }}>인건비 합계: ₩{laborTotal.toLocaleString()} ({totalWorkers}명)</div>}
+            </Card>
+
+            {/* 부대비용 */}
+            <Card style={{ marginTop: 12 }}>
+              <label style={{ fontSize: 13, fontWeight: 700, color: TEXT, display: "block", marginBottom: 8 }}>🧾 부대비용</label>
+              {[
+                ["벽지제거비 (공급면적×5,000원)", removalFee, useRemovalFee, setUseRemovalFee],
+                ["폐기물처리비 (공급면적×3,000원)", wasteFee, useWasteFee, setUseWasteFee],
+                ["풀기계사용료 (고정)", glueFee, useGlueFee, setUseGlueFee],
+                [`식대 (${totalWorkers}명×10,000원)`, mealFee, useMealFee, setUseMealFee],
+              ].map(([label, amount, use, setUse]) => (
+                <div key={label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 10px", background: BG, borderRadius: 8, marginBottom: 6 }}>
+                  <div>
+                    <div style={{ fontSize: 12, color: TEXT }}>{label}</div>
+                    <div style={{ fontSize: 11, color: PRIMARY, fontWeight: 700 }}>₩{Math.round(amount).toLocaleString()}</div>
+                  </div>
+                  <button onClick={() => setUse(p => !p)} style={{ width: 36, height: 20, borderRadius: 10, border: "none", cursor: "pointer", background: use ? PRIMARY : BORDER, position: "relative", flexShrink: 0 }}>
+                    <div style={{ width: 16, height: 16, borderRadius: "50%", background: "#fff", position: "absolute", top: 2, left: use ? 18 : 2, transition: "left 0.15s" }} />
+                  </button>
                 </div>
-              </Card>
-            ); })}
-            <button onClick={addItem} style={{ width: "100%", marginTop: 12, border: `2px dashed ${BORDER}`, borderRadius: 14, padding: 13, background: "#fff", cursor: "pointer", fontSize: 13, color: SUB, fontWeight: 600 }}>+ 자재 항목 추가</button>
+              ))}
+              <div style={{ textAlign: "right", fontSize: 12, fontWeight: 700, color: PRIMARY, marginTop: 4 }}>부대비용 합계: ₩{Math.round(extraTotal).toLocaleString()}</div>
+            </Card>
+
+            {/* 기타 항목 */}
             <button onClick={() => setExtraItems(p => [...p, { id: Date.now(), desc: "", amount: "" }])} style={{ width: "100%", marginTop: 6, border: `2px dashed ${BORDER}`, borderRadius: 14, padding: 13, background: "#fff", cursor: "pointer", fontSize: 13, color: SUB, fontWeight: 600 }}>+ 기타 항목 추가</button>
             {extraItems.length > 0 && (
               <Card style={{ marginTop: 10 }}>
@@ -3351,43 +3441,10 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
                     <NumFmt value={e.amount} onChange={ev => setExtraItems(p => p.map(x => x.id === e.id ? { ...x, amount: ev.target.value } : x))} placeholder="금액" style={{ width: "100%" }} />
                   </div>
                 ))}
-                {extraTotal > 0 && <div style={{ textAlign: "right", fontSize: 11, fontWeight: 600, color: PRIMARY }}>기타 합계: ₩{extraTotal.toLocaleString()}</div>}
               </Card>
             )}
-            {matTotal > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 14px", marginTop: 8, background: PL, borderRadius: 10 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>자재비 소계</span>
-                <span style={{ fontSize: 14, fontWeight: 800, color: PRIMARY }}>₩{Math.round(matTotal).toLocaleString()}</span>
-              </div>
-            )}
-            <Card style={{ marginTop: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                <label style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>👷 인건비</label>
-                <button onClick={() => setLaborItems(p => [...p, { id: Date.now(), type: "", count: "", rate: "", days: "" }])} style={{ background: PRIMARY, color: "#fff", border: "none", borderRadius: 8, padding: "3px 10px", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>+ 추가</button>
-              </div>
-              {laborItems.map((l, i) => (
-                <div key={l.id} style={{ background: BG, borderRadius: 8, padding: 10, marginBottom: 6 }}>
-                  <div style={{ display: "flex", gap: 4 }}>
-                    <select value={l.type} onChange={e => { const v = e.target.value; setLaborItems(p => p.map(x => x.id === l.id ? { ...x, type: v } : x)); }} style={{ flex: 2, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "7px 4px", fontSize: 12, outline: "none", color: l.type ? TEXT : SUB }}>
-                      <option value="">시공자</option>
-                      {Object.keys(LABOR_TYPES).map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                    <input value={l.count} onChange={e => setLaborItems(p => p.map(x => x.id === l.id ? { ...x, count: e.target.value } : x))} placeholder="명" type="number" style={{ width: 44, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "7px 2px", fontSize: 12, outline: "none", textAlign: "center", flexShrink: 0 }} />
-                    <NumFmt value={l.rate} onChange={e => setLaborItems(p => p.map(x => x.id === l.id ? { ...x, rate: e.target.value } : x))} placeholder="일당" style={{ flex: 1 }} />
-                    <input value={l.days} onChange={e => setLaborItems(p => p.map(x => x.id === l.id ? { ...x, days: e.target.value } : x))} placeholder="일수" type="number" style={{ width: 44, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "7px 2px", fontSize: 12, outline: "none", textAlign: "center", flexShrink: 0 }} />
-                    {laborItems.length > 1 && <button onClick={() => setLaborItems(p => p.filter(x => x.id !== l.id))} style={{ background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA", borderRadius: 6, padding: "2px 6px", fontSize: 11, cursor: "pointer", alignSelf: "center" }}>×</button>}
-                  </div>
-                  {(parseInt(l.count) > 0 && parseInt(l.rate) > 0 && parseInt(l.days) > 0) && <div style={{ textAlign: "right", fontSize: 11, fontWeight: 600, color: PRIMARY, marginTop: 4 }}>₩{((parseInt(l.count)||0) * (parseInt(l.rate)||0) * (parseInt(l.days)||0)).toLocaleString()}</div>}
-                </div>
-              ))}
-              {laborTotal > 0 && <div style={{ textAlign: "right", fontSize: 12, fontWeight: 700, color: PRIMARY, marginTop: 4 }}>인건비 합계: ₩{laborTotal.toLocaleString()}</div>}
-            </Card>
-            {laborTotal > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 14px", marginTop: 8, background: PL, borderRadius: 10 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>인건비 소계</span>
-                <span style={{ fontSize: 14, fontWeight: 800, color: PRIMARY }}>₩{laborTotal.toLocaleString()}</span>
-              </div>
-            )}
+
+            {/* 수수료 / 부가세 */}
             <Card style={{ marginTop: 12 }}>
               <label style={{ fontSize: 12, fontWeight: 700, color: TEXT, display: "block", marginBottom: 6 }}>수수료</label>
               <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
@@ -3400,19 +3457,22 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
                 <span style={{ fontSize: 12, color: SUB, flexShrink: 0 }}>%</span>
               </div>
               {feeAmount > 0 && <div style={{ fontSize: 11, color: PRIMARY, marginTop: 4, textAlign: "right" }}>{feeTarget} ₩{Math.round(feeBase).toLocaleString()} × {feeRate}% = ₩{Math.round(feeAmount).toLocaleString()}</div>}
-              <label style={{ fontSize: 12, fontWeight: 700, color: TEXT, display: "block", marginBottom: 8 }}>부가세 (10%)</label>
+              <label style={{ fontSize: 12, fontWeight: 700, color: TEXT, display: "block", marginBottom: 8, marginTop: 10 }}>부가세 (10%)</label>
               <div style={{ display: "flex", gap: 8 }}>
                 {[["none", "해당없음"], ["include", "포함 (합산)"], ["separate", "별도 (+10%)"]].map(([v, l]) => (
                   <button key={v} onClick={() => setVat(v)} style={{ flex: 1, border: `2px solid ${vat === v ? PRIMARY : BORDER}`, borderRadius: 10, padding: "8px 0", fontSize: 11, fontWeight: 700, cursor: "pointer", background: vat === v ? PL : "#fff", color: vat === v ? PRIMARY : SUB }}>{l}</button>
                 ))}
               </div>
             </Card>
+
+            {/* 원가 요약 */}
             {(matTotal > 0 || laborTotal > 0) && (
               <Card style={{ marginTop: 12, background: "#FAFAFA" }}>
                 <p style={{ fontSize: 11, fontWeight: 700, color: SUB, margin: "0 0 8px" }}>💡 원가 요약 (고객 비공개)</p>
                 <div style={{ fontSize: 12, color: SUB, lineHeight: 1.9 }}>
                   <div style={{ display: "flex", justifyContent: "space-between" }}><span>자재비 합계</span><span>₩{Math.round(matTotal).toLocaleString()}</span></div>
-                  <div style={{ display: "flex", justifyContent: "space-between" }}><span>인건비 ({totalArea.toFixed(2)}㎡)</span><span>₩{Math.round(laborTotal).toLocaleString()}</span></div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}><span>인건비</span><span>₩{Math.round(laborTotal).toLocaleString()}</span></div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}><span>부대비용</span><span>₩{Math.round(extraTotal).toLocaleString()}</span></div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}><span>소계</span><span>₩{Math.round(subtotal).toLocaleString()}</span></div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}><span>수수료 ({parseFloat(feeRate) || 0}%)</span><span>₩{Math.round(feeAmount).toLocaleString()}</span></div>
                   {vat === "separate" && <div style={{ display: "flex", justifyContent: "space-between" }}><span>부가세 별도 (+10%)</span><span>₩{Math.round(vatAmount).toLocaleString()}</span></div>}
@@ -3431,12 +3491,17 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
             <Card style={{ background: GRAD }}>
               <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 12, marginBottom: 4 }}>총 견적 금액</div>
               <div style={{ color: "#fff", fontSize: 28, fontWeight: 800 }}>₩{Math.round(finalTotal).toLocaleString()}</div>
-              <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, marginTop: 4 }}>총 {totalArea.toFixed(2)}㎡ · ₩{Math.round(customerUnit).toLocaleString()}/㎡</div>
+              <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, marginTop: 4 }}>공급면적 {supplyPyeong.toFixed(1)}평 · 도배 주문수량 {orderQty.toFixed(1)}평</div>
             </Card>
             <Card style={{ marginTop: 12 }}>
               <p style={{ fontSize: 13, fontWeight: 700, margin: "0 0 12px", color: SUB }}>📋 고객 견적서 미리보기</p>
-              <div style={{ display: "flex", fontSize: 11, color: SUB, paddingBottom: 6, borderBottom: `1px solid ${BORDER}`, marginBottom: 6 }}><span style={{ flex: 2 }}>부위</span><span style={{ flex: 1, textAlign: "center" }}>면적</span><span style={{ flex: 1, textAlign: "right" }}>금액</span></div>
-              {items.filter(it => itemArea(it) > 0 || it.memo).map((it, i) => { const a = itemArea(it); return (<div key={it.id} style={{ display: "flex", fontSize: 13, marginBottom: 8 }}><span style={{ flex: 2, fontWeight: 600 }}>{it.memo || "항목 " + (i + 1)}</span><span style={{ flex: 1, textAlign: "center", color: SUB }}>{a.toFixed(2)}㎡</span><span style={{ flex: 1, textAlign: "right", fontWeight: 700, color: PRIMARY }}>₩{Math.round(a * customerUnit).toLocaleString()}</span></div>); })}
+              <div style={{ fontSize: 13, lineHeight: 2 }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: SUB }}>공급면적</span><span style={{ fontWeight: 600 }}>{supplyPyeong.toFixed(1)}평</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: SUB }}>도배 주문수량</span><span style={{ fontWeight: 600 }}>{orderQty.toFixed(1)}평</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: SUB }}>자재비 ({wallpaperType})</span><span style={{ fontWeight: 700, color: PRIMARY }}>₩{Math.round(matTotal).toLocaleString()}</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: SUB }}>인건비</span><span style={{ fontWeight: 700, color: PRIMARY }}>₩{Math.round(laborTotal).toLocaleString()}</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: SUB }}>부대비용</span><span style={{ fontWeight: 700, color: PRIMARY }}>₩{Math.round(extraTotal).toLocaleString()}</span></div>
+              </div>
             </Card>
             <Card style={{ marginTop: 12, background: "#FFF7ED", border: "1px solid #FED7AA" }}>
               <p style={{ fontSize: 13, fontWeight: 700, margin: "0 0 10px", color: "#EA580C" }}>📅 시공 일정 (확정 시)</p>
@@ -4191,6 +4256,21 @@ export default function App() {
     const openDonate = () => setShowDonateModal(true);
     window.addEventListener("openDonateModal", openDonate);
     return () => window.removeEventListener("openDonateModal", openDonate);
+  }, []);
+
+  // ⚠️ input 안에서 Enter 키 누르면 폼 제출처럼 동작해서
+  // 화면 이동/뒤로가기가 발생하는 문제 방지 (전역 차단)
+  // textarea는 줄바꿈이 필요하므로 제외, select도 제외
+  useEffect(() => {
+    const blockEnterSubmit = (e) => {
+      if (e.key !== "Enter") return;
+      const tag = e.target.tagName;
+      if (tag === "INPUT") {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener("keydown", blockEnterSubmit);
+    return () => document.removeEventListener("keydown", blockEnterSubmit);
   }, []);
 
   // 뒤로가기(popstate) → 앱 내부에서만 처리
