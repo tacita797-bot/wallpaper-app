@@ -2909,8 +2909,7 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
   // ── 입력 방식: 실측(measure) or 평형대(pyeong) ──
   const [inputMode, setInputMode] = useState("pyeong"); // "pyeong" | "measure"
   const [pyeongInput, setPyeongInput] = useState("");     // 분양평수(대략 견적용)
-  const [measureW, setMeasureW] = useState("");           // 가로(m)
-  const [measureH, setMeasureH] = useState("");           // 세로(m)
+  const [measureRooms, setMeasureRooms] = useState([{ id: 0, name: "", w: "", h: "" }]); // 실측: 공간별 가로×세로 리스트
 
   // ── 옵션 ──
   const [isExpanded, setIsExpanded] = useState(false);     // 베란다 확장형 (+15%)
@@ -2993,10 +2992,11 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
   const ceilUp = (n) => Math.ceil(n);
 
   // ── 실평수 계산 ──
-  // 실측 모드: (가로m × 세로m) / 3.24
+  // 실측 모드: 각 공간(가로m × 세로m) / 3.24 를 모두 더함
   // 평형대 모드: 입력한 분양평수를 그대로 공급면적으로 사용
+  const roomAreas = measureRooms.map(r => ((parseFloat(r.w) || 0) * (parseFloat(r.h) || 0)) / 3.24);
   const supplyPyeong = inputMode === "measure"
-    ? ((parseFloat(measureW) || 0) * (parseFloat(measureH) || 0)) / 3.24
+    ? roomAreas.reduce((s, a) => s + a, 0)
     : (parseFloat(pyeongInput) || 0);
 
   // ── 도배 주문수량 계산 ──
@@ -3040,7 +3040,7 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
 
   function reset() {
     setDone(false); setStep(1); setSelC(null);
-    setInputMode("pyeong"); setPyeongInput(""); setMeasureW(""); setMeasureH("");
+    setInputMode("pyeong"); setPyeongInput(""); setMeasureRooms([{ id: 0, name: "", w: "", h: "" }]);
     setIsExpanded(false); setBuiltinRate(0); setCeilingIncluded(true); setLossType("무지");
     setWallpaperType("실크벽지"); setMatUnitPrice("");
     setLaborItems([{ id: 0, type: "", count: "", days: "" }]);
@@ -3061,8 +3061,7 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
         const d = data.items; // 도배 견적 데이터는 items 컬럼에 JSON으로 저장
         setInputMode(d.inputMode || "pyeong");
         setPyeongInput(d.pyeongInput || "");
-        setMeasureW(d.measureW || "");
-        setMeasureH(d.measureH || "");
+        setMeasureRooms(Array.isArray(d.measureRooms) && d.measureRooms.length > 0 ? d.measureRooms : [{ id: 0, name: "", w: "", h: "" }]);
         setIsExpanded(!!d.isExpanded);
         setBuiltinRate(d.builtinRate || 0);
         setCeilingIncluded(d.ceilingIncluded !== false);
@@ -3081,7 +3080,7 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
       } else {
         // 기존 견적 없으면 초기화
         setEstimateId(null);
-        setInputMode("pyeong"); setPyeongInput(""); setMeasureW(""); setMeasureH("");
+        setInputMode("pyeong"); setPyeongInput(""); setMeasureRooms([{ id: 0, name: "", w: "", h: "" }]);
         setIsExpanded(false); setBuiltinRate(0); setCeilingIncluded(true); setLossType("무지");
         setWallpaperType("실크벽지"); setMatUnitPrice("");
         setLaborItems([{ id: 0, type: "", count: "", days: "" }]);
@@ -3102,7 +3101,7 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
       user_id: userId,
       client_id: selC.id,
       items: {
-        inputMode, pyeongInput, measureW, measureH,
+        inputMode, pyeongInput, measureRooms,
         isExpanded, builtinRate, ceilingIncluded, lossType,
         wallpaperType, matUnitPrice,
         useRemovalFee, useWasteFee, useGlueFee, useMealFee,
@@ -3306,13 +3305,32 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
                 </div>
               ) : (
                 <div>
-                  <label style={{ fontSize: 11, fontWeight: 600, color: SUB, display: "block", marginBottom: 4 }}>가로 × 세로 (m)</label>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <NumFmt value={measureW} onChange={e => setMeasureW(e.target.value)} placeholder="가로" style={{ flex: 1, textAlign: "center" }} />
-                    <span style={{ color: SUB, fontSize: 13, flexShrink: 0 }}>×</span>
-                    <NumFmt value={measureH} onChange={e => setMeasureH(e.target.value)} placeholder="세로" style={{ flex: 1, textAlign: "center" }} />
-                    <span style={{ fontSize: 12, color: PRIMARY, fontWeight: 700, flexShrink: 0 }}>{supplyPyeong > 0 ? supplyPyeong.toFixed(1) + "평" : ""}</span>
-                  </div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: SUB, display: "block", marginBottom: 8 }}>공간별 실측 (가로 × 세로)</label>
+                  {measureRooms.map((room, i) => (
+                    <div key={room.id} style={{ background: BG, borderRadius: 10, padding: 10, marginBottom: 8 }}>
+                      <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+                        <input
+                          value={room.name}
+                          onChange={e => setMeasureRooms(p => p.map(r => r.id === room.id ? { ...r, name: e.target.value } : r))}
+                          placeholder={`공간 이름 (예: 안방)`}
+                          style={{ flex: 1, minWidth: 0, border: `1.5px solid ${BORDER}`, borderRadius: 8, padding: "8px 10px", fontSize: 12, outline: "none", color: TEXT, boxSizing: "border-box" }}
+                        />
+                        {measureRooms.length > 1 && (
+                          <button onClick={() => setMeasureRooms(p => p.filter(r => r.id !== room.id))} style={{ background: "#FEF2F2", color: "#DC2626", border: "1px solid #FECACA", borderRadius: 8, padding: "0 10px", fontSize: 13, cursor: "pointer", flexShrink: 0 }}>×</button>
+                        )}
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <NumFmt value={room.w} onChange={e => setMeasureRooms(p => p.map(r => r.id === room.id ? { ...r, w: e.target.value } : r))} placeholder="가로" style={{ flex: 1, minWidth: 0, textAlign: "center" }} />
+                        <span style={{ color: SUB, fontSize: 13, flexShrink: 0 }}>×</span>
+                        <NumFmt value={room.h} onChange={e => setMeasureRooms(p => p.map(r => r.id === room.id ? { ...r, h: e.target.value } : r))} placeholder="세로" style={{ flex: 1, minWidth: 0, textAlign: "center" }} />
+                        <span style={{ fontSize: 11, color: PRIMARY, fontWeight: 700, flexShrink: 0, minWidth: 40, textAlign: "right" }}>{roomAreas[i] > 0 ? roomAreas[i].toFixed(1) + "평" : ""}</span>
+                      </div>
+                    </div>
+                  ))}
+                  <button onClick={() => setMeasureRooms(p => [...p, { id: Date.now(), name: "", w: "", h: "" }])} style={{ width: "100%", border: `1.5px dashed ${PRIMARY}`, borderRadius: 10, padding: "9px 0", background: "#fff", color: PRIMARY, fontSize: 12, fontWeight: 700, cursor: "pointer", marginBottom: 8 }}>+ 공간 추가</button>
+                  {supplyPyeong > 0 && (
+                    <div style={{ textAlign: "right", fontSize: 13, fontWeight: 700, color: PRIMARY, padding: "6px 2px" }}>합계: {supplyPyeong.toFixed(1)}평</div>
+                  )}
                 </div>
               )}
             </Card>
