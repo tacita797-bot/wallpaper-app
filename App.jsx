@@ -3006,14 +3006,14 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
   const ceilUp = (n) => Math.ceil(n);
 
   // ── 실평수 계산 ──
-  // 실측 모드: 각 공간(가로m × 세로m) / 3.24 를 모두 더함
-  // 평형대 모드: 입력한 분양평수를 그대로 공급면적으로 사용
-  // ※ 산출 시 소수점 이하는 무조건 올림
+  // 실측 모드: 각 공간(가로m × 세로m) / 3.24 를 공간별로 올림한 후 합산
+  //            (도배업 관행: 공간마다 개별로 올림 처리 후 더함)
+  // 평형대 모드: 입력한 분양평수를 그대로 공급면적으로 사용, 올림
   const roomAreas = measureRooms.map(r => ((parseFloat(r.w) || 0) * (parseFloat(r.h) || 0)) / 3.24);
-  const supplyPyeongRaw = inputMode === "measure"
-    ? roomAreas.reduce((s, a) => s + a, 0)
-    : (parseFloat(pyeongInput) || 0);
-  const supplyPyeong = ceilUp(supplyPyeongRaw);
+  const roomAreasCeiled = roomAreas.map(a => a > 0 ? ceilUp(a) : 0);
+  const supplyPyeong = inputMode === "measure"
+    ? roomAreasCeiled.reduce((s, a) => s + a, 0)
+    : ceilUp(parseFloat(pyeongInput) || 0);
 
   // ── 도배 주문수량 계산 ──
   // 기본: 공급면적 × 2.5
@@ -3339,7 +3339,7 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
                         <DecFmt value={room.w} onChange={e => setMeasureRooms(p => p.map(r => r.id === room.id ? { ...r, w: e.target.value } : r))} placeholder="가로" style={{ flex: 1, minWidth: 0, textAlign: "center" }} />
                         <span style={{ color: SUB, fontSize: 13, flexShrink: 0 }}>×</span>
                         <DecFmt value={room.h} onChange={e => setMeasureRooms(p => p.map(r => r.id === room.id ? { ...r, h: e.target.value } : r))} placeholder="세로" style={{ flex: 1, minWidth: 0, textAlign: "center" }} />
-                        <span style={{ fontSize: 11, color: PRIMARY, fontWeight: 700, flexShrink: 0, minWidth: 40, textAlign: "right" }}>{roomAreas[i] > 0 ? roomAreas[i].toFixed(1) + "평" : ""}</span>
+                        <span style={{ fontSize: 11, color: PRIMARY, fontWeight: 700, flexShrink: 0, minWidth: 40, textAlign: "right" }}>{roomAreasCeiled[i] > 0 ? roomAreasCeiled[i] + "평" : ""}</span>
                       </div>
                     </div>
                   ))}
