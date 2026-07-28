@@ -3408,6 +3408,11 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
                   <div style={{ display: "flex", justifyContent: "space-between" }}><span>도배지 필요량 (참고)</span><span>{materialQty.toFixed(1)}평</span></div>
                 </div>
               )}
+              {supplyPyeong === 0 && (
+                <div style={{ marginTop: 10, padding: 10, background: "#FEF2F2", borderRadius: 8, fontSize: 10, color: "#DC2626" }}>
+                  ⚠️ 디버그: pyeongInput="{pyeongInput}" / parseFloat={parseFloat(pyeongInput)} / inputMode={inputMode}
+                </div>
+              )}
               {matTotal > 0 && <div style={{ fontSize: 11, color: PRIMARY, marginTop: 6, textAlign: "right", fontWeight: 700 }}>자재비: ₩{Math.round(matTotal).toLocaleString()}</div>}
             </Card>
 
