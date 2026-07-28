@@ -3318,6 +3318,7 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
                     <DecFmt value={pyeongInput} onChange={e => setPyeongInput(e.target.value)} placeholder="32" style={{ flex: 1 }} />
                     <span style={{ fontSize: 13, color: SUB, flexShrink: 0 }}>평</span>
                   </div>
+                  <div style={{ fontSize: 10, color: "red", marginTop: 4 }}>[DEBUG] state="{pyeongInput}" len={pyeongInput.length}</div>
                 </div>
               ) : (
                 <div>
@@ -3329,6 +3330,9 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
                           value={room.name}
                           onChange={e => setMeasureRooms(p => p.map(r => r.id === room.id ? { ...r, name: e.target.value } : r))}
                           placeholder={`공간 이름 (예: 안방)`}
+                          lang="ko"
+                          autoComplete="off"
+                          autoCorrect="off"
                           style={{ flex: 1, minWidth: 0, border: `1.5px solid ${BORDER}`, borderRadius: 8, padding: "8px 10px", fontSize: 12, outline: "none", color: TEXT, boxSizing: "border-box" }}
                         />
                         {measureRooms.length > 1 && (
