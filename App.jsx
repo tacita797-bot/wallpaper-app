@@ -3315,7 +3315,7 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 600, color: SUB, display: "block", marginBottom: 4 }}>분양평수</label>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <NumFmt value={pyeongInput} onChange={e => setPyeongInput(e.target.value)} placeholder="32" style={{ flex: 1 }} />
+                    <DecFmt value={pyeongInput} onChange={e => setPyeongInput(e.target.value)} placeholder="32" style={{ flex: 1 }} />
                     <span style={{ fontSize: 13, color: SUB, flexShrink: 0 }}>평</span>
                   </div>
                 </div>
@@ -3406,11 +3406,6 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
                   <div style={{ display: "flex", justifyContent: "space-between" }}><span>{wallpaperType} 1롤 시공평수</span><span>{rollCoverage}평/롤</span></div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}><span>필요 롤 수</span><span style={{ fontWeight: 700, color: PRIMARY }}>{neededRolls}롤</span></div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}><span>도배지 필요량 (참고)</span><span>{materialQty.toFixed(1)}평</span></div>
-                </div>
-              )}
-              {supplyPyeong === 0 && (
-                <div style={{ marginTop: 10, padding: 10, background: "#FEF2F2", borderRadius: 8, fontSize: 10, color: "#DC2626" }}>
-                  ⚠️ 디버그: pyeongInput="{pyeongInput}" / parseFloat={parseFloat(pyeongInput)} / inputMode={inputMode}
                 </div>
               )}
               {matTotal > 0 && <div style={{ fontSize: 11, color: PRIMARY, marginTop: 6, textAlign: "right", fontWeight: 700 }}>자재비: ₩{Math.round(matTotal).toLocaleString()}</div>}
