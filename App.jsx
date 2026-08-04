@@ -811,6 +811,7 @@ function HomeScreen({ clients, setScreen, user, onLogout, userId, onSelectClient
   const [homeMemos, setHomeMemos] = useState([]);
   const [homeSchedules, setHomeSchedules] = useState([]);
   const [showMusicModal, setShowMusicModal] = useState(false);
+  const [activePlaylist, setActivePlaylist] = useState(null);
 
   // 시공예정: 오늘 이후 날짜만 (날짜 지나면 자동 제외)
   const upList = clients.filter(c => c.status === "시공예정" && c.work_date >= today);
@@ -862,24 +863,58 @@ function HomeScreen({ clients, setScreen, user, onLogout, userId, onSelectClient
       </div>
       <div style={{ padding: "18px 14px" }}>
         <p style={{ fontSize: 14, fontWeight: 700, color: TEXT, margin: "0 0 10px" }}>빠른 실행</p>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 18 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 10 }}>
           {actions.map(([ic, lb, to]) => (
             <button key={lb} onClick={() => setScreen(to)} style={{ background: CARD, border: "none", borderRadius: 14, padding: "14px 8px", cursor: "pointer", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
               <span style={{ fontSize: 24 }}>{ic}</span>
               <span style={{ fontSize: 11, fontWeight: 600, color: TEXT }}>{lb}</span>
             </button>
           ))}
+          <button onClick={() => setShowMusicModal(p => !p)} style={{ background: showMusicModal ? "#7C3AED" : CARD, border: "none", borderRadius: 14, padding: "14px 8px", cursor: "pointer", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 24 }}>🎵</span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: showMusicModal ? "#fff" : TEXT }}>작업 음악</span>
+          </button>
         </div>
 
-        {/* 🎵 작업 음악 */}
-        <button onClick={() => setShowMusicModal(true)} style={{ width: "100%", background: "linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)", border: "none", borderRadius: 16, padding: "16px 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14, marginBottom: 18, textAlign: "left" }}>
-          <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>🎵</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", marginBottom: 2 }}>작업 음악 틀기</div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.85)" }}>시공하면서 듣기 좋은 인기 플레이리스트</div>
-          </div>
-          <div style={{ fontSize: 18, color: "#fff", flexShrink: 0 }}>›</div>
-        </button>
+        {/* 🎵 작업 음악 - 홈 화면 내부에서 펼쳐지는 플레이어 (외부 이동 없음) */}
+        {showMusicModal && (
+          <Card style={{ marginBottom: 18, padding: 12 }}>
+            {!activePlaylist ? (
+              <>
+                <p style={{ fontSize: 12, fontWeight: 700, color: TEXT, margin: "0 0 10px" }}>🎵 재생목록 선택</p>
+                {[
+                  { emoji: "🔥", title: "실시간 인기 100", id: "PL4fGSI1pDJn6jXS_Tv_N9B8Z0HTRVJE0m" },
+                  { emoji: "💿", title: "90년대 발라드", id: "PL5rrjxhH2rM37CD-qs8B2ihlSQ6rRzKdx" },
+                  { emoji: "🎤", title: "2000년대 발라드", id: "PL8D7QZ0Dxc5BZC5OWZOW2_b7-a6ZBOoDx" },
+                  { emoji: "🎶", title: "3040 애창곡", id: "PLoSO_w08i9yKO5SFJI_7xv27153vp0ifQ" },
+                ].map(pl => (
+                  <button key={pl.id} onClick={() => setActivePlaylist(pl)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: 10, background: BG, borderRadius: 10, marginBottom: 6, border: "none", cursor: "pointer", textAlign: "left" }}>
+                    <span style={{ fontSize: 18 }}>{pl.emoji}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{pl.title}</span>
+                  </button>
+                ))}
+              </>
+            ) : (
+              <>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <button onClick={() => setActivePlaylist(null)} style={{ background: "none", border: "none", color: PRIMARY, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0 }}>← 목록</button>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: TEXT }}>{activePlaylist.emoji} {activePlaylist.title}</span>
+                  <button onClick={() => { setShowMusicModal(false); setActivePlaylist(null); }} style={{ background: "none", border: "none", color: SUB, fontSize: 18, cursor: "pointer", padding: 0 }}>×</button>
+                </div>
+                <div style={{ position: "relative", width: "100%", paddingBottom: "56.25%", borderRadius: 10, overflow: "hidden", background: "#000" }}>
+                  <iframe
+                    src={`https://www.youtube.com/embed/videoseries?list=${activePlaylist.id}&autoplay=1`}
+                    title="작업 음악"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}
+                  />
+                </div>
+              </>
+            )}
+          </Card>
+        )}
 
         {/* 시공 예정 (오늘 이후만 표시) */}
         {upList.length > 0 && (<>
@@ -940,35 +975,6 @@ function HomeScreen({ clients, setScreen, user, onLogout, userId, onSelectClient
           ))}
         </>)}
       </div>
-
-      {/* 🎵 작업 음악 모달 */}
-      {showMusicModal && (
-        <div onClick={() => setShowMusicModal(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 300, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: "22px 22px 0 0", padding: "22px 18px 36px", width: "100%", maxWidth: 430, maxHeight: "80vh", overflowY: "auto" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-              <span style={{ fontSize: 17, fontWeight: 700 }}>🎵 작업 음악</span>
-              <button onClick={() => setShowMusicModal(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 24, color: SUB }}>×</button>
-            </div>
-            <div style={{ fontSize: 12, color: SUB, marginBottom: 16, lineHeight: 1.5 }}>탭하면 유튜브 앱/웹으로 이동해서 바로 재생돼요</div>
-            {[
-              { emoji: "🔥", title: "실시간 인기 100", desc: "유튜브뮤직 국내 인기차트 (자동 업데이트)", url: "https://music.youtube.com/playlist?list=PL4fGSI1pDJn6jXS_Tv_N9B8Z0HTRVJE0m" },
-              { emoji: "💿", title: "90년대 발라드 베스트", desc: "추억의 90년대 감성 발라드", url: "https://www.youtube.com/playlist?list=PL5rrjxhH2rM37CD-qs8B2ihlSQ6rRzKdx" },
-              { emoji: "🎤", title: "2000년대 발라드", desc: "2000년대 감성 발라드 모음", url: "https://www.youtube.com/playlist?list=PL8D7QZ0Dxc5BZC5OWZOW2_b7-a6ZBOoDx" },
-              { emoji: "🎶", title: "3040 애창곡 모음", desc: "40~50대가 좋아하는 노래 추천", url: "https://www.youtube.com/playlist?list=PLoSO_w08i9yKO5SFJI_7xv27153vp0ifQ" },
-            ].map(pl => (
-              <a key={pl.title} href={pl.url} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 12, padding: 14, background: BG, borderRadius: 14, marginBottom: 10, textDecoration: "none" }}>
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: PL, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{pl.emoji}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{pl.title}</div>
-                  <div style={{ fontSize: 11, color: SUB, marginTop: 2 }}>{pl.desc}</div>
-                </div>
-                <div style={{ fontSize: 16, color: SUB, flexShrink: 0 }}>▶</div>
-              </a>
-            ))}
-            <div style={{ fontSize: 10, color: BORDER, textAlign: "center", marginTop: 8 }}>실시간 인기차트는 유튜브가 자동으로 갱신해줘요</div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -3824,19 +3830,21 @@ function ScheduleScreen({ clients, setClients, userId, setScreen }) {
 // ── 하단 네비 ──
 // ── 할 일 ──
 function TodoScreen({ setScreen, userId }) {
+  const today = new Date().toISOString().split("T")[0];
   const [todos, setTodos] = useState([]);
   const [input, setInput] = useState("");
+  const [dateInput, setDateInput] = useState(today);
   const [loading, setLoading] = useState(true);
   useEffect(() => { window.scrollTo(0, 0); loadTodos(); }, []);
   async function loadTodos() {
-    const { data } = await supabase.from("todos").select("*").eq("user_id", userId).order("created_at", { ascending: false });
+    const { data } = await supabase.from("todos").select("*").eq("user_id", userId).order("date", { ascending: true });
     if (data) setTodos(data);
     setLoading(false);
   }
   async function add() {
     if (!input.trim()) return;
-    const { data } = await supabase.from("todos").insert([{ user_id: userId, text: input.trim(), done: false, date: new Date().toISOString().split("T")[0] }]).select().single();
-    if (data) setTodos([data, ...todos]);
+    const { data } = await supabase.from("todos").insert([{ user_id: userId, text: input.trim(), done: false, date: dateInput || today }]).select().single();
+    if (data) setTodos([...todos, data]);
     setInput("");
   }
   async function toggle(id) {
@@ -3846,6 +3854,7 @@ function TodoScreen({ setScreen, userId }) {
     setTodos(todos.map(x => x.id === id ? { ...x, done: !x.done } : x));
   }
   async function del(id) {
+    if (!window.confirm("이 할 일을 삭제할까요?")) return;
     await supabase.from("todos").delete().eq("id", id);
     setTodos(todos.filter(x => x.id !== id));
   }
@@ -3860,20 +3869,25 @@ function TodoScreen({ setScreen, userId }) {
     <div style={{ background: BG, minHeight: "100vh" }}>
       <Header title={`✅ 할 일 (${pending})`} back onBack={() => setScreen("home")} />
       <div style={{ padding: "14px 14px 80px", display: "flex", flexDirection: "column", gap: 10 }}>
-        <div style={{ display: "flex", gap: 8 }}>
-          <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && add()} placeholder="할 일 추가..." style={{ flex: 1, border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, outline: "none", color: TEXT, background: CARD }} />
-          <button onClick={add} style={{ background: PRIMARY, color: "#fff", border: "none", borderRadius: 12, padding: "0 18px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>추가</button>
+        <div style={{ background: CARD, borderRadius: 12, padding: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+          <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && add()} placeholder="할 일 추가..." style={{ border: `1.5px solid ${BORDER}`, borderRadius: 10, padding: "10px 12px", fontSize: 14, outline: "none", color: TEXT, background: CARD, boxSizing: "border-box" }} />
+          <div style={{ display: "flex", gap: 8 }}>
+            <input type="date" value={dateInput} onChange={e => setDateInput(e.target.value)} style={{ flex: 1, border: `1.5px solid ${BORDER}`, borderRadius: 10, padding: "9px 10px", fontSize: 13, outline: "none", color: TEXT, background: CARD, boxSizing: "border-box" }} />
+            <button onClick={add} style={{ background: PRIMARY, color: "#fff", border: "none", borderRadius: 10, padding: "0 20px", fontSize: 14, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>추가</button>
+          </div>
         </div>
         {todos.length > 0 && todos.some(t => t.done) && (
           <button onClick={clearDone} style={{ background: "none", border: "none", color: SUB, fontSize: 11, cursor: "pointer", textAlign: "right" }}>완료 항목 삭제</button>
         )}
         {todos.length === 0 && <Card><p style={{ textAlign: "center", color: SUB, fontSize: 13, margin: 0, padding: 20 }}>등록된 할 일이 없어요</p></Card>}
         {todos.map(t => (
-          <Card key={t.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: 12 }}>
+          <Card key={t.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: 12, border: (!t.done && t.date && t.date < today) ? "1.5px solid #FCA5A5" : undefined }}>
             <button onClick={() => toggle(t.id)} style={{ width: 26, height: 26, borderRadius: 8, border: `2px solid ${t.done ? "#16A34A" : BORDER}`, background: t.done ? "#16A34A" : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: "#fff", fontSize: 14 }}>{t.done ? "✓" : ""}</button>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 14, color: t.done ? SUB : TEXT, textDecoration: t.done ? "line-through" : "none", fontWeight: 500 }}>{t.text}</div>
-              <div style={{ fontSize: 10, color: SUB, marginTop: 2 }}>{t.date}</div>
+              <div style={{ fontSize: 10, color: (!t.done && t.date && t.date < today) ? "#DC2626" : t.date === today ? PRIMARY : SUB, marginTop: 2, fontWeight: (t.date === today || (!t.done && t.date < today)) ? 700 : 400 }}>
+                {t.date === today ? "오늘" : t.date}{!t.done && t.date && t.date < today ? " · 기한 지남" : ""}
+              </div>
             </div>
             <button onClick={() => del(t.id)} style={{ background: "none", border: "none", color: SUB, cursor: "pointer", fontSize: 16, flexShrink: 0 }}>×</button>
           </Card>
