@@ -810,6 +810,7 @@ function HomeScreen({ clients, setScreen, user, onLogout, userId, onSelectClient
   const [homeTodos, setHomeTodos] = useState([]);
   const [homeMemos, setHomeMemos] = useState([]);
   const [homeSchedules, setHomeSchedules] = useState([]);
+  const [showMusicModal, setShowMusicModal] = useState(false);
 
   // 시공예정: 오늘 이후 날짜만 (날짜 지나면 자동 제외)
   const upList = clients.filter(c => c.status === "시공예정" && c.work_date >= today);
@@ -870,6 +871,16 @@ function HomeScreen({ clients, setScreen, user, onLogout, userId, onSelectClient
           ))}
         </div>
 
+        {/* 🎵 작업 음악 */}
+        <button onClick={() => setShowMusicModal(true)} style={{ width: "100%", background: "linear-gradient(135deg, #7C3AED 0%, #A855F7 100%)", border: "none", borderRadius: 16, padding: "16px 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14, marginBottom: 18, textAlign: "left" }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>🎵</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", marginBottom: 2 }}>작업 음악 틀기</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.85)" }}>시공하면서 듣기 좋은 인기 플레이리스트</div>
+          </div>
+          <div style={{ fontSize: 18, color: "#fff", flexShrink: 0 }}>›</div>
+        </button>
+
         {/* 시공 예정 (오늘 이후만 표시) */}
         {upList.length > 0 && (<>
           <p style={{ fontSize: 14, fontWeight: 700, color: TEXT, margin: "0 0 10px" }}>🔧 시공 예정</p>
@@ -929,6 +940,35 @@ function HomeScreen({ clients, setScreen, user, onLogout, userId, onSelectClient
           ))}
         </>)}
       </div>
+
+      {/* 🎵 작업 음악 모달 */}
+      {showMusicModal && (
+        <div onClick={() => setShowMusicModal(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 300, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: "22px 22px 0 0", padding: "22px 18px 36px", width: "100%", maxWidth: 430, maxHeight: "80vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <span style={{ fontSize: 17, fontWeight: 700 }}>🎵 작업 음악</span>
+              <button onClick={() => setShowMusicModal(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 24, color: SUB }}>×</button>
+            </div>
+            <div style={{ fontSize: 12, color: SUB, marginBottom: 16, lineHeight: 1.5 }}>탭하면 유튜브 앱/웹으로 이동해서 바로 재생돼요</div>
+            {[
+              { emoji: "🔥", title: "실시간 인기 100", desc: "유튜브뮤직 국내 인기차트 (자동 업데이트)", url: "https://music.youtube.com/playlist?list=PL4fGSI1pDJn6jXS_Tv_N9B8Z0HTRVJE0m" },
+              { emoji: "💿", title: "90년대 발라드 베스트", desc: "추억의 90년대 감성 발라드", url: "https://www.youtube.com/playlist?list=PL5rrjxhH2rM37CD-qs8B2ihlSQ6rRzKdx" },
+              { emoji: "🎤", title: "2000년대 발라드", desc: "2000년대 감성 발라드 모음", url: "https://www.youtube.com/playlist?list=PL8D7QZ0Dxc5BZC5OWZOW2_b7-a6ZBOoDx" },
+              { emoji: "🎶", title: "3040 애창곡 모음", desc: "40~50대가 좋아하는 노래 추천", url: "https://www.youtube.com/playlist?list=PLoSO_w08i9yKO5SFJI_7xv27153vp0ifQ" },
+            ].map(pl => (
+              <a key={pl.title} href={pl.url} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 12, padding: 14, background: BG, borderRadius: 14, marginBottom: 10, textDecoration: "none" }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: PL, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{pl.emoji}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{pl.title}</div>
+                  <div style={{ fontSize: 11, color: SUB, marginTop: 2 }}>{pl.desc}</div>
+                </div>
+                <div style={{ fontSize: 16, color: SUB, flexShrink: 0 }}>▶</div>
+              </a>
+            ))}
+            <div style={{ fontSize: 10, color: BORDER, textAlign: "center", marginTop: 8 }}>실시간 인기차트는 유튜브가 자동으로 갱신해줘요</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -3318,7 +3358,6 @@ function EstimateScreen({ clients, setClients, setScreen, userId, preClient, cle
                     <DecFmt value={pyeongInput} onChange={e => setPyeongInput(e.target.value)} placeholder="32" style={{ flex: 1 }} />
                     <span style={{ fontSize: 13, color: SUB, flexShrink: 0 }}>평</span>
                   </div>
-                  <div style={{ fontSize: 10, color: "red", marginTop: 4 }}>[DEBUG] state="{pyeongInput}" len={pyeongInput.length}</div>
                 </div>
               ) : (
                 <div>
